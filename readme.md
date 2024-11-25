@@ -1,8 +1,8 @@
 # Membership System
 Workflow new folder
 1. Buat folder di directorymu
-2. Pake git bash cd ke folder tersebut (cd path)
-3. git clone https://github.com/GeryYulianto/membershipSystem
+2. Buka Terminal di vscode dan pastikan di directory yang benar
+3. git clone https://github.com/GeryYulianto/CourseWeb
 
 Workflow push git
 1. pastiin udah di folder hasil clone (cd yourpath/membershipSystem)
