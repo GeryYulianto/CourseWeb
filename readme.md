@@ -5,7 +5,7 @@ Workflow new folder
 3. git clone https://github.com/GeryYulianto/CourseWeb
 
 Workflow push git
-1. pastiin udah di folder hasil clone (cd yourpath/membershipSystem)
+1. pastiin udah di folder hasil clone (cd yourpath/CourseWeb)
 2. git pull origin main (buat pastiin file kamu yang terupdate)
 3. Bikin branch baru (git checkout -b name-branch)
 4. git add .
