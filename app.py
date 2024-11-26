@@ -1,26 +1,14 @@
-from flask import *
-from flask_session import Session
+from features.flask_app import FlaskApp
+from features.auth import AuthFeatures
+from flask import Flask
 
-app = Flask(__name__)
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
+flask_app = Flask(__name__)
 
-@app.route("/")
-def home():
-    #Kalo belom login
-    if not session.get('name'):
-        return redirect('/login')
-    
-    return render_template('homepage.html')
+app = FlaskApp(flask_app)
 
-@app.route('/login', methods=['POST', 'GET'])
-def login():
-    if request.method == 'POST':
-        pass
-        # return render_template()
-    else:
-        return render_template('login_page.html')
+auth_features = AuthFeatures(flask_app)
+
+auth_features.add_endpoint_auth()
 
 if __name__ == "__main__":
     app.run(debug=True)
