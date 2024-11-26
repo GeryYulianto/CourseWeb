@@ -1,4 +1,4 @@
-# Membership System
+# Course Web
 Workflow new folder
 1. Buat folder di directorymu
 2. Buka Terminal di vscode dan pastikan di directory yang benar
