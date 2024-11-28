@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Course - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/admin">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title mb-4">Add New Course</h1>
+                <form method="POST" action="/admin/add-course">
+                    <div class="mb-3">
+                        <label for="nama_kursus" class="form-label">Course Name</label>
+                        <input type="text" class="form-control" id="nama_kursus" name="nama_kursus" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_instruktur" class="form-label">Instructor</label>
+                        <select class="form-control" id="id_instruktur" name="id_instruktur" required>
+                            {% for instructor in instructors %}
+                            <option value="{{ instructor.id_instruktur }}">{{ instructor.nama_instruktur }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Course</button>
+                    <a href="/admin/manage-courses" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
