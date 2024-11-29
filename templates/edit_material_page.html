@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Material - Instructor Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/instructor">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title mb-4">Edit Material</h1>
+                <form method="POST" action="/instructor/update-material/{{ material.id_materi }}">
+                    <div class="mb-3">
+                        <label for="konten_materi" class="form-label">Material Content</label>
+                        <textarea class="form-control" id="konten_materi" name="konten_materi" rows="4" required>{{ material.konten_materi }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="link_youtube_video" class="form-label">YouTube Video Link</label>
+                        <input type="url" class="form-control" id="link_youtube_video" name="link_youtube_video" value="{{ material.link_youtube_video }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Material</button>
+                    <a href="/instructor/manage-materials/{{ material.id_kursus }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

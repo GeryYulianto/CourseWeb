@@ -240,6 +240,57 @@ class AuthFeatures(FlaskApp):
         else:
             instructors = query_db('SELECT * FROM instruktur')
             return render_template('add_course_page.html', instructors=instructors)
+        
+    def manage_materials(self, id_kursus):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+
+        email = session['email']
+        instructor = query_db('SELECT id_instruktur FROM instruktur WHERE email = ?', (email,), one=True)
+
+        if instructor:
+            materials = query_db('SELECT * FROM materi WHERE id_kursus = ?', (id_kursus,))
+            return render_template('manage_materials_page.html', materials=materials, id_kursus=id_kursus)
+        else:
+            return redirect('/login_instructor')
+
+    def add_material(self, id_kursus):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+
+        if request.method == 'POST':
+            konten_materi = request.form['konten_materi']
+            link_youtube_video = request.form['link_youtube_video']
+
+            query_db('INSERT INTO materi (id_kursus, konten_materi, link_youtube_video) VALUES (?, ?, ?)',
+                    (id_kursus, konten_materi, link_youtube_video))
+            return redirect(f'/instructor/manage-materials/{id_kursus}')
+
+        return render_template('add_material_page.html', id_kursus=id_kursus)
+
+    def update_material(self, id_materi):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+
+        if request.method == 'POST':
+            konten_materi = request.form['konten_materi']
+            link_youtube_video = request.form['link_youtube_video']
+
+            query_db('UPDATE materi SET konten_materi = ?, link_youtube_video = ? WHERE id_materi = ?',
+                    (konten_materi, link_youtube_video, id_materi))
+            return redirect('/instructor/manage-materials')
+
+        material = query_db('SELECT * FROM materi WHERE id_materi = ?', (id_materi,), one=True)
+        return render_template('edit_material_page.html', material=material)
+
+
+    def delete_material(self, id_materi, id_kursus):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+
+        query_db('DELETE FROM materi WHERE id_materi = ?', (id_materi,))
+        return redirect(f'/instructor/manage-materials/{id_kursus}')
+    
 
     def add_endpoint_auth(self):
         # USER ENDPOINTS ------------------------------------------------------------------------------
@@ -265,6 +316,13 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/add-user', 'add_user', self.add_user, ['GET', 'POST'])
         self.add_endpoint('/admin/manage-courses', 'manage_courses', self.manage_courses, ['GET', 'POST'])
         self.add_endpoint('/admin/add-course', 'add_course', self.add_course, ['GET', 'POST'])
+
+        # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
+        self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])
+        self.add_endpoint('/instructor/add-material/<id_kursus>', 'add_material', self.add_material, ['GET', 'POST'])
+        self.add_endpoint('/instructor/update-material/<id_materi>', 'update_material', self.update_material, ['GET', 'POST'])
+        self.add_endpoint('/instructor/delete-material/<id_materi>/<id_kursus>', 'delete_material', self.delete_material, ['GET'])
+
 
         # COURSES ENDPOINTS ----------------------------------------------------------------------------
         # self.add_endpoint('/courses', 'courses', self.courses, ['GET'])

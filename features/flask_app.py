@@ -1,6 +1,7 @@
 from database import *
-from flask_session import Session 
+from flask_session import Session
 from flask import *
+
 
 flask_app = Flask(__name__)
 
