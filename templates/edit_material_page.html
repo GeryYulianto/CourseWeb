@@ -24,12 +24,17 @@
                 <h1 class="card-title mb-4">Edit Material</h1>
                 <form method="POST" action="/instructor/update-material/{{ material.id_materi }}">
                     <div class="mb-3">
+                        <input type="hidden" id="id_kursus" name="id_kursus" value="{{ material.id_kursus }}">
+                    </div>
+                    <div class="mb-3">
                         <label for="konten_materi" class="form-label">Material Content</label>
-                        <textarea class="form-control" id="konten_materi" name="konten_materi" rows="4" required>{{ material.konten_materi }}</textarea>
+                        <textarea class="form-control" id="konten_materi" name="konten_materi" rows="4"
+                            required>{{ material.konten_materi }}</textarea>
                     </div>
                     <div class="mb-3">
                         <label for="link_youtube_video" class="form-label">YouTube Video Link</label>
-                        <input type="url" class="form-control" id="link_youtube_video" name="link_youtube_video" value="{{ material.link_youtube_video }}">
+                        <input type="url" class="form-control" id="link_youtube_video" name="link_youtube_video"
+                            value="{{ material.link_youtube_video }}">
                     </div>
                     <button type="submit" class="btn btn-primary">Update Material</button>
                     <a href="/instructor/manage-materials/{{ material.id_kursus }}" class="btn btn-secondary">Cancel</a>

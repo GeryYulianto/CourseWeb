@@ -250,7 +250,8 @@ class AuthFeatures(FlaskApp):
 
         if instructor:
             materials = query_db('SELECT * FROM materi WHERE id_kursus = ?', (id_kursus,))
-            return render_template('manage_materials_page.html', materials=materials, id_kursus=id_kursus)
+            course_name = query_db('SELECT nama_kursus FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
+            return render_template('manage_materials_page.html', materials=materials, id_kursus=id_kursus, course_name=course_name['nama_kursus'])
         else:
             return redirect('/login_instructor')
 
@@ -275,14 +276,14 @@ class AuthFeatures(FlaskApp):
         if request.method == 'POST':
             konten_materi = request.form['konten_materi']
             link_youtube_video = request.form['link_youtube_video']
+            id_kursus = request.form['id_kursus']
 
             query_db('UPDATE materi SET konten_materi = ?, link_youtube_video = ? WHERE id_materi = ?',
                     (konten_materi, link_youtube_video, id_materi))
-            return redirect('/instructor/manage-materials')
+            return redirect('/instructor/manage-materials/' + id_kursus)
 
         material = query_db('SELECT * FROM materi WHERE id_materi = ?', (id_materi,), one=True)
         return render_template('edit_material_page.html', material=material)
-
 
     def delete_material(self, id_materi, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
@@ -290,7 +291,7 @@ class AuthFeatures(FlaskApp):
 
         query_db('DELETE FROM materi WHERE id_materi = ?', (id_materi,))
         return redirect(f'/instructor/manage-materials/{id_kursus}')
-    
+
 
     def add_endpoint_auth(self):
         # USER ENDPOINTS ------------------------------------------------------------------------------
@@ -316,6 +317,7 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/add-user', 'add_user', self.add_user, ['GET', 'POST'])
         self.add_endpoint('/admin/manage-courses', 'manage_courses', self.manage_courses, ['GET', 'POST'])
         self.add_endpoint('/admin/add-course', 'add_course', self.add_course, ['GET', 'POST'])
+        # self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])
