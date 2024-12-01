@@ -1,92 +1,84 @@
-from features.flask_app import FlaskApp, render_template, request, redirect, url_for
-from features.auth import AuthFeatures
-from features.quiz import QuizFeatures
-from features.student import StudentFeatures
-import sqlite3
+from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flask import Flask
-import sqlite3
 
-flask_app = Flask(__name__)
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app = FlaskApp(flask_app)
+db = SQLAlchemy(app)
 
-auth_features = AuthFeatures(flask_app)
-quiz_features = QuizFeatures(flask_app)
-student_features = StudentFeatures(flask_app)
+# Database Models
+class Participant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
 
-# Database setup
-def init_db():
-    with sqlite3.connect('app.db') as conn:
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        email TEXT NOT NULL UNIQUE,
-                        password TEXT NOT NULL)''')
-        c.execute('''CREATE TABLE IF NOT EXISTS payments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        participant_id INTEGER NOT NULL,
-                        amount REAL NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'pending',
-                        date TEXT NOT NULL)''')
-        c.execute('''CREATE TABLE IF NOT EXISTS invoices (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        payment_id INTEGER NOT NULL,
-                        participant_id INTEGER NOT NULL,
-                        amount REAL NOT NULL,
-                        date TEXT NOT NULL,
-                        FOREIGN KEY (payment_id) REFERENCES payments(id))''')
-        conn.commit()
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    participant_id = db.Column(db.Integer, db.ForeignKey('participant.id'), nullable=False)
+    status = db.Column(db.String(50), nullable=False)  
+
+class Score(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    participant_id = db.Column(db.Integer, db.ForeignKey('participant.id'), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
 
 # Routes
+@app.route('/request-certificate/<int:participant_id>', methods=['GET'])
+def request_certificate(participant_id):
+    # Check participant
+    participant = Participant.query.get(participant_id)
+    if not participant:
+        return jsonify({'error': 'Participant not found'}), 404
+
+    # Check payment
+    payment = Payment.query.filter_by(participant_id=participant_id).first()
+    if not payment or payment.status != 'paid':
+        return jsonify({'error': 'Payment not completed'}), 400
+
+    # Get score
+    score = Score.query.filter_by(participant_id=participant_id).first()
+    if not score:
+        return jsonify({'error': 'Score not found'}), 404
+
+    # Generate certificate
+    return render_template('sertifikat.html', 
+                           participant=participant, 
+                           payment=payment, 
+                           score=score)
+
 @app.route('/admin/manage-payments', methods=['GET'])
 def manage_payments():
     participant_id = request.args.get('participant_id')
     payment = None
     if participant_id:
-        with sqlite3.connect('app.db') as conn:
-            c = conn.cursor()
-            c.execute("SELECT * FROM payments WHERE participant_id = ?", (participant_id,))
-            payment = c.fetchone()
+        payment = Payment.query.filter_by(participant_id=participant_id).first()
     return render_template('manage_payment_page.html', payment=payment)
 
 @app.route('/payment', methods=['POST'])
 def process_payment():
     participant_id = request.form['participant_id']
     amount = request.form['amount']
-    with sqlite3.connect('app.db') as conn:
-        c = conn.cursor()
-        c.execute("INSERT INTO payments (participant_id, amount, status, date) VALUES (?, ?, 'completed', ?)",
-                  (participant_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        conn.commit()
+    new_payment = Payment(
+        participant_id=participant_id,
+        status='paid'
+    )
+    db.session.add(new_payment)
+    db.session.commit()
     return redirect(url_for('generate_invoice', participant_id=participant_id))
 
-@app.route('/invoice/<participant_id>', methods=['GET'])
+@app.route('/invoice/<int:participant_id>', methods=['GET'])
 def generate_invoice(participant_id):
-    invoice = None
-    with sqlite3.connect('app.db') as conn:
-        c = conn.cursor()
-        c.execute('''
-        SELECT p.id AS payment_id, p.amount, p.date, p.participant_id
-        FROM payments p WHERE p.participant_id = ?
-        ''', (participant_id,))
-        payment = c.fetchone()
-        if payment:
-            invoice = {
-                'id': payment[0],
-                'amount': payment[1],
-                'date': payment[2],
-                'participant_id': payment[3]
-            }
-            c.execute("INSERT INTO invoices (payment_id, participant_id, amount, date) VALUES (?, ?, ?, ?)",
-                      (invoice['id'], invoice['participant_id'], invoice['amount'], invoice['date']))
-            conn.commit()
+    payment = Payment.query.filter_by(participant_id=participant_id).first()
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+    invoice = {
+        'id': payment.id,
+        'participant_id': payment.participant_id,
+        'status': payment.status
+    }
     return render_template('invoice_page.html', invoice=invoice)
 
-quiz_features.add_endpoint_quiz()
-auth_features.add_endpoint_auth()
-student_features.add_endpoints_student()
-
 if __name__ == '__main__':
-    init_db()
+    db.create_all()  # Create tables
     app.run(debug=True)
