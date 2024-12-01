@@ -241,6 +241,38 @@ class AuthFeatures(FlaskApp):
             instructors = query_db('SELECT * FROM instruktur')
             return render_template('add_course_page.html', instructors=instructors)
         
+    def edit_course(self, id_kursus):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        
+        if request.method == 'POST':
+            nama_kursus = request.form['nama_kursus']
+            id_instruktur = request.form['id_instruktur']
+            
+            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ? WHERE id_kursus = ?',
+                     (nama_kursus, id_instruktur, id_kursus))
+            return redirect('/admin/manage-courses')
+        
+        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
+        instructors = query_db('SELECT * FROM instruktur')
+        return render_template('edit_course_page.html', course=course, instructors=instructors)
+
+    def update_course(self, id_kursus):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        
+        if request.method == 'POST':
+            nama_kursus = request.form['nama_kursus']
+            id_instruktur = request.form['id_instruktur']
+            
+            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ? WHERE id_kursus = ?',
+                     (nama_kursus, id_instruktur, id_kursus))
+            return redirect('/admin/manage-courses')
+        
+        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
+        instructors = query_db('SELECT * FROM instruktur')
+        return render_template('edit_course_page.html', course=course, instructors=instructors)
+
     def manage_materials(self, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
             return redirect('/login_instructor')
@@ -317,7 +349,8 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/add-user', 'add_user', self.add_user, ['GET', 'POST'])
         self.add_endpoint('/admin/manage-courses', 'manage_courses', self.manage_courses, ['GET', 'POST'])
         self.add_endpoint('/admin/add-course', 'add_course', self.add_course, ['GET', 'POST'])
-        # self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
+        self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
+        self.add_endpoint('/admin/update-course/<id_kursus>', 'update_course', self.update_course, ['GET', 'POST'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])
