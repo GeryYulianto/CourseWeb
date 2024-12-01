@@ -124,6 +124,40 @@ def init_db():
                 role TEXT NOT NULL
             )
         ''')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS quiz (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_kursus INTEGER,
+                title TEXT NOT NULL,
+                FOREIGN KEY (id_kursus) REFERENCES kursus(id_kursus)
+            )
+        ''')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS quiz_question (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_quiz INTEGER,
+                question TEXT NOT NULL,
+                FOREIGN KEY (id_quiz) REFERENCES quiz(id)
+            )
+        ''')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS quiz_choice (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_quiz_question INTEGER,
+                choice TEXT NOT NULL,
+                is_answer INTEGER CHECK(is_answer IN (0, 1)),
+                FOREIGN KEY (id_quiz_question) REFERENCES quiz_question(id)
+            )
+        ''')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS user_has_quiz (
+                id_peserta INTEGER,
+                id_quiz INTEGER,
+                score INTEGER NOT NULL,
+                FOREIGN KEY (id_peserta) REFERENCES peserta(id_peserta),
+                FOREIGN KEY (id_quiz) REFERENCES quiz(id)
+            )
+        ''')
 
         # Create triggers to update all_users table
         db.execute('''
