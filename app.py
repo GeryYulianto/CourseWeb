@@ -65,7 +65,7 @@ def process_payment():
     )
     db.session.add(new_payment)
     db.session.commit()
-    return redirect(url_for('generate_invoice', participant_id=participant_id))
+    return redirect(url_for('payment_page', participant_id=participant_id))
 
 @app.route('/invoice/<int:participant_id>', methods=['GET'])
 def generate_invoice(participant_id):
