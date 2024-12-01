@@ -159,6 +159,27 @@ def init_db():
             )
         ''')
 
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                participant_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                date TEXT NOT NULL
+            )
+        ''')
+
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                payment_id INTEGER NOT NULL,
+                participant_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY (payment_id) REFERENCES payments(id)
+            )
+        ''')
+
         # Create triggers to update all_users table
         db.execute('''
             CREATE TRIGGER IF NOT EXISTS insert_peserta AFTER INSERT ON peserta
