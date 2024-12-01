@@ -249,12 +249,43 @@ class AuthFeatures(FlaskApp):
         instructor = query_db('SELECT id_instruktur FROM instruktur WHERE email = ?', (email,), one=True)
 
         if instructor:
+            # Fetch materials
             materials = query_db('SELECT * FROM materi WHERE id_kursus = ?', (id_kursus,))
+            
+            # Fetch course name
             course_name = query_db('SELECT nama_kursus FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
-            return render_template('manage_materials_page.html', materials=materials, id_kursus=id_kursus, course_name=course_name['nama_kursus'])
+            
+            # Fetch quizzes with questions
+            quizzes = query_db('''
+                SELECT q.id, q.title, 
+                    GROUP_CONCAT(qq.question) as questions,
+                    COUNT(qq.id) as question_count
+                FROM quiz q 
+                LEFT JOIN quiz_question qq ON q.id = qq.id_quiz 
+                WHERE q.id_kursus = ? 
+                GROUP BY q.id, q.title
+            ''', (id_kursus,))
+
+            quiz_list = []
+            if quizzes:
+                for quiz in quizzes:
+                    quiz_dict = {
+                        'id_quiz': quiz['id'],
+                        'judul_quiz': quiz['title'],
+                        'questions': quiz['questions'].split(',') if quiz['questions'] else [],
+                        'question_count': quiz['question_count']
+                    }
+                    quiz_list.append(quiz_dict)
+
+            return render_template(
+                'manage_materials_page.html',
+                materials=materials,
+                id_kursus=id_kursus,
+                course_name=course_name['nama_kursus'],
+                quiz_list=quiz_list
+            )
         else:
             return redirect('/login_instructor')
-
     def add_material(self, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
             return redirect('/login_instructor')

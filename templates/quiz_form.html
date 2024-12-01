@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Quiz - {{ course_name }}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            position: relative;
+        }
+        .discard-question {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/instructor">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2 class="mb-4">Create Quiz for {{ course_name }}</h2>
+        <form method="POST" action="/instructor/quiz/{{id_kursus}}" id="quizForm">
+            
+            <div class="mb-3">
+                <label for="title" class="form-label">Quiz Title</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+
+            <div id="questions">
+                <div class="question">
+                    <button type="button" class="btn btn-danger btn-sm discard-question" onclick="discardQuestion(this)">
+                        <i class="bi bi-trash"></i> Discard
+                    </button>
+                    <div class="mb-3">
+                        <label for="question" class="form-label">Question</label>
+                        <input type="text" class="form-control" name="questions[]" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Choices</label>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="choices[0][]" required placeholder="Choice 1">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="choices[0][]" required placeholder="Choice 2">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="choices[0][]" required placeholder="Choice 3">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="choices[0][]" required placeholder="Choice 4">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="form-label">Correct Answer</label>
+                            <select class="form-select" name="correct_answer[0]" required>
+                                <option value="">Select Correct Answer</option>
+                                <option value="0">Choice 1</option>
+                                <option value="1">Choice 2</option>
+                                <option value="2">Choice 3</option>
+                                <option value="3">Choice 4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <button type="button" class="btn btn-secondary me-2" onclick="addQuestion()">
+                    <i class="bi bi-plus-circle"></i> Add Question
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Submit Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    function addQuestion() {
+        const questions = document.getElementById('questions');
+        const questionCount = questions.children.length;
+        
+        const questionDiv = document.createElement('div');
+        questionDiv.classList.add('question');
+        
+        questionDiv.innerHTML = `
+            <button type="button" class="btn btn-danger btn-sm discard-question" onclick="discardQuestion(this)">
+                <i class="bi bi-trash"></i> Discard
+            </button>
+            <div class="mb-3">
+                <label for="question" class="form-label">Question</label>
+                <input type="text" class="form-control" name="questions[]" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Choices</label>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <input type="text" class="form-control" name="choices[${questionCount}][]" required placeholder="Choice 1">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <input type="text" class="form-control" name="choices[${questionCount}][]" required placeholder="Choice 2">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <input type="text" class="form-control" name="choices[${questionCount}][]" required placeholder="Choice 3">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <input type="text" class="form-control" name="choices[${questionCount}][]" required placeholder="Choice 4">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">Correct Answer</label>
+                    <select class="form-select" name="correct_answer[${questionCount}]" required>
+                        <option value="">Select Correct Answer</option>
+                        <option value="0">Choice 1</option>
+                        <option value="1">Choice 2</option>
+                        <option value="2">Choice 3</option>
+                        <option value="3">Choice 4</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
+        questions.appendChild(questionDiv);
+    }
+
+    function discardQuestion(button) {
+        const questionDiv = button.closest('.question');
+        
+        // Ensure at least one question remains
+        if (document.querySelectorAll('.question').length > 1) {
+            questionDiv.remove();
+        } else {
+            alert('You must have at least one question in the quiz.');
+        }
+    }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
