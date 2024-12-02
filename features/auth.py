@@ -384,6 +384,35 @@ class AuthFeatures(FlaskApp):
         instructor = query_db('SELECT * FROM instruktur WHERE id_instruktur = ?', (id_instruktur,), one=True)
         return render_template('edit_instructor_page.html', instructor=instructor)
 
+    def manage_enrollments(self):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        
+        courses = query_db('SELECT * FROM kursus INNER JOIN instruktur ON kursus.id_instruktur = instruktur.id_instruktur')
+        enrollments = query_db('SELECT * FROM peserta_has_kursus INNER JOIN peserta ON peserta_has_kursus.id_peserta = peserta.id_peserta INNER JOIN kursus ON peserta_has_kursus.id_kursus = kursus.id_kursus ORDER BY peserta_has_kursus.id_kursus, peserta_has_kursus.id_peserta')
+        return render_template('manage_enrollments_page.html', enrollments=enrollments, courses=courses)
+
+    def enroll_student(self, id_kursus):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        
+        if request.method == 'POST':
+            id_peserta = request.form['id_peserta']
+            
+            query_db('INSERT INTO peserta_has_kursus (id_peserta, id_kursus) VALUES (?, ?)',
+                     (id_peserta, id_kursus))
+            return redirect('/admin/manage-enrollments')
+        
+        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
+        students = query_db('''
+            SELECT * FROM peserta
+            WHERE id_peserta NOT IN (
+                SELECT id_peserta FROM peserta_has_kursus WHERE id_kursus = ?
+            )
+        ''', (id_kursus,))
+        return render_template('enroll_student_page.html', course=course, students=students)
+
+
     def add_endpoint_auth(self):
         # USER ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/login', 'login', self.login, ['GET', 'POST'])
@@ -412,7 +441,8 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/manage-instructors', 'manage_instructors', self.manage_instructors, ['GET'])
         self.add_endpoint('/admin/add-instructor', 'add_instructor', self.add_instructor, ['GET', 'POST'])
         self.add_endpoint('/admin/edit-instructor/<id_instruktur>', 'edit_instructor', self.edit_instructor, ['GET', 'POST'])
-
+        self.add_endpoint('/admin/manage-enrollments', 'manage_enrollments', self.manage_enrollments, ['GET'])
+        self.add_endpoint('/admin/enroll-student/<id_kursus>', 'enroll_student', self.enroll_student, ['GET', 'POST'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])
