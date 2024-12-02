@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Completion</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .certificate-container {
+            border: 2px solid #000;
+            padding: 50px;
+            margin: 50px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .certificate-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .certificate-body {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .certificate-footer {
+            font-size: 1em;
+            margin-top: 40px;
+        }
+
+        .underline {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="certificate-container">
+        <div class="certificate-title">
+            CERTIFICATE OF COMPLETION
+        </div>
+        <hr>
+        <div class="certificate-body">
+            <br>
+            <h2 class="underline">{{ student.nama_peserta }}</h2>
+            <br>
+            <h6>On {{ certificate.keterangan }} successfully completed the course</h6>
+            <h3>{{ course.nama_kursus }}</h3>
+        </div>
+        <div class="certificate-footer">
+            <h5>Taught by:</h5>
+            <h3 class="underline">{{ instructor.nama_instruktur }}</h3>
+            <h6>INSTRUCTOR</h6>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
