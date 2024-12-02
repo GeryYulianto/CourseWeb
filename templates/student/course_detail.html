@@ -66,6 +66,26 @@
                 {% endif %}
             </div>
         </div>
+        <!-- Certificate Section -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-white">
+                <h3>Certificate</h3>
+            </div>
+            <div class="card-body">
+                {% if payment and payment.status == 'paid' %}
+                    {% if certificate %}
+                        <p>Congratulations! You have unlocked the certificate for this course.</p>
+                        <p><strong>Certificate Description:</strong> {{ certificate.keterangan }}</p>
+                    {% else %}
+                        <p>Your payment is successful, but the certificate has not been issued yet. Please contact support.</p>
+                    {% endif %}
+                {% else %}
+                    <p>This certificate is locked. Complete the payment to unlock it.</p>
+                    <a href="{{ url_for('payment', course_id=course.id_kursus) }}" class="btn btn-success">Pay Now</a>
+                {% endif %}
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>

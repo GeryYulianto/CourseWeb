@@ -32,14 +32,48 @@ class StudentFeatures(FlaskApp):
         return render_template('student/achievements.html', achievements=achievements)
 
     def student_course_detail(self, course_id):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') or session.get('role') != 'user':
             return redirect(url_for('home'))
+
+        # Get student ID from session (assuming it's stored)
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', [email], one=True)
+        if not student:
+            return redirect(url_for('home'))
+
+        student_id = student['id_peserta']
+
+        # Fetch course details, materials, and quizzes
         course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', [course_id], one=True)
         materis = query_db('SELECT * FROM materi WHERE id_kursus = ?', [course_id])
-        quiz = query_db('SELECT * FROM quiz WHERE id_kursus = ?', [course_id]) #can have many quiz
+        quiz = query_db('SELECT * FROM quiz WHERE id_kursus = ?', [course_id])
+
         if not course:
             return redirect(url_for('home'))
-        return render_template('student/course_detail.html', course=course, quiz=quiz, materis=materis)
+
+        payment = query_db(
+            'SELECT * FROM pembayaran WHERE id_peserta = ? AND id_kursus = ?',
+            [student_id, course_id],
+            one=True
+        )
+
+        certificate = None
+        if payment and payment['status'] == 'paid':
+            certificate = query_db(
+                'SELECT * FROM sertifikat WHERE id_peserta = ? AND id_kursus = ?',
+                [student_id, course_id],
+                one=True
+            )
+
+        return render_template(
+            'student/course_detail.html',
+            course=course,
+            materis=materis,
+            quiz=quiz,
+            payment=payment,
+            certificate=certificate
+        )
+
 
     def take_quizs(self, quiz_id):
         if not session.get('email') or session.get('role') != 'user':
@@ -58,7 +92,6 @@ class StudentFeatures(FlaskApp):
         )
         already_submitted = submission is not None
         score = submission['score'] if already_submitted else None
-        print(already_submitted, submission)
 
         questions = []
         if not already_submitted:
@@ -145,6 +178,34 @@ class StudentFeatures(FlaskApp):
             )
         ''', (student_id,))
         return render_template('student/browse_course.html', courses=courses)
+    
+    def pay_for_course(self, course_id):
+        if not session.get('email') or session.get('role') != 'user':
+            return redirect(url_for('home'))
+
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', [email], one=True)
+        if not student:
+            return redirect(url_for('home'))
+
+        student_id = student['id_peserta']
+
+        if request.method == 'POST':
+            price = query_db('SELECT harga_kursus from kursus where id_kursus = ?', [course_id], one=True)
+
+            query_db(
+                '''
+                INSERT INTO pembayaran (id_peserta, id_kursus, total_harga, status)
+                VALUES (?, ?, ?, ?)
+                ''',
+                [student_id, course_id, int(price['harga_kursus']), 'paid']
+            )
+
+            return redirect(url_for('student_course_detail', course_id=course_id))
+
+        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', [course_id], one=True)
+        return render_template('student/payment.html', course=course)
+
 
     def add_endpoints_student(self):
         self.add_endpoint('/student/', 'student_dashboard', self.student_dashboard, methods=['GET'])
@@ -156,4 +217,5 @@ class StudentFeatures(FlaskApp):
         self.add_endpoint('/student/quiz/<int:quiz_id>/submit', 'submit_quiz', self.submit_quiz, methods=['POST'])
         self.add_endpoint('/student/browse-course', 'browse_course', self.browse_course, methods=['GET'])
         self.add_endpoint('/student/quiz/<int:quiz_id>/retry', 'retry_quiz', self.retry_quiz, methods=['POST'])
+        self.add_endpoint('/student/pay/<int:course_id>', 'payment', self.pay_for_course, ['GET', 'POST'])
 
