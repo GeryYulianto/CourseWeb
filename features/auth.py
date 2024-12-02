@@ -13,7 +13,7 @@ class AuthFeatures(FlaskApp):
             
             if user and check_password_hash(user['password'], password):
                 session['email'] = email
-                session['role'] = 'user'
+                session['role'] = 'student'
                 return redirect('/')
             else:
                 return render_template('login_page.html', error='Invalid email or password')
@@ -47,11 +47,9 @@ class AuthFeatures(FlaskApp):
             return render_template('register_page.html')
     
     def home(self):
-        #Kalo belom login
-        if not session.get('email') and session.get('role') != 'user':
-            return redirect('/login')
-        
-        return render_template('homepage.html')
+        if not session.get('email') or session.get('role') != 'student':
+            return redirect(url_for('login'))
+        return redirect(url_for('student_dashboard'))
     
     def logout(self):
         session.clear()
@@ -385,6 +383,7 @@ class AuthFeatures(FlaskApp):
             )
         else:
             return redirect('/login_instructor')
+    
     def add_material(self, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
             return redirect('/login_instructor')
@@ -422,6 +421,39 @@ class AuthFeatures(FlaskApp):
         query_db('DELETE FROM materi WHERE id_materi = ?', (id_materi,))
         return redirect(f'/instructor/manage-materials/{id_kursus}')
 
+    def manage_enrollments(self):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        courses = query_db('SELECT * FROM kursus INNER JOIN instruktur ON kursus.id_instruktur = instruktur.id_instruktur')
+        enrollments = query_db('''
+            SELECT p.id_peserta, p.nama_peserta, k.id_kursus, k.nama_kursus
+            FROM peserta_has_kursus pk
+            JOIN peserta p ON pk.id_peserta = p.id_peserta
+            JOIN kursus k ON pk.id_kursus = k.id_kursus
+            ORDER BY k.id_kursus, p.id_peserta
+        ''')
+        return render_template('manage_enrollments_page.html', courses=courses, enrollments=enrollments)
+
+    def enroll_student(self, id_kursus):
+        if not session.get('email') and session.get('role') != 'admin':
+            return redirect('/login_admin')
+        
+        if request.method == 'POST':
+            id_peserta = request.form['id_peserta']
+            student = query_db('SELECT * FROM peserta WHERE id_peserta = ?', (id_peserta,), one=True)
+            if not student:
+                flash('Student not found', 'error')
+                return redirect(f'/admin/enroll-student/{id_kursus}')
+            
+            query_db('INSERT INTO peserta_has_kursus (id_peserta, id_kursus) VALUES (?, ?)',
+                     (id_peserta, id_kursus))
+            flash('Student enrolled successfully', 'success')
+            return redirect(f'/admin/manage-enrollments')
+        
+        students = query_db('SELECT * FROM peserta')
+        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
+        return render_template('enroll_student_page.html', students=students, course=course)
+
 
     def add_endpoint_auth(self):
         # USER ENDPOINTS ------------------------------------------------------------------------------
@@ -454,6 +486,8 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/add-instructor', 'add_instructor', self.add_instructor, ['GET', 'POST'])
         self.add_endpoint('/admin/edit-instructor/<id_instruktur>', 'edit_instructor', self.edit_instructor, ['GET', 'POST'])
         self.add_endpoint('/admin/delete-instructor/<id_instruktur>', 'delete_instructor', self.delete_instructor, ['GET'])
+        self.add_endpoint('/admin/manage-enrollments', 'manage_enrollments', self.manage_enrollments, ['GET'])
+        self.add_endpoint('/admin/enroll-student/<id_kursus>', 'enroll_student', self.enroll_student, ['GET', 'POST'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])

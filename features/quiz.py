@@ -54,8 +54,9 @@ class QuizFeatures(FlaskApp):
             return redirect(f'/instructor/manage-materials/{id_kursus}')
         else:
             return render_template('quiz_form.html', id_kursus=id_kursus)
+    
     def take_quiz(self, course_id, quiz_id):
-        if not session.get('email') or session.get('role') != 'peserta':
+        if not session.get('email') or session.get('role') != 'student':
             return redirect('/login')
         
         if request.method == 'POST':
@@ -138,9 +139,21 @@ class QuizFeatures(FlaskApp):
                                 choices=choices,
                                 course_id=course_id)
 
+    def delete_quiz(self, id_kursus, quiz_id):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+        
+        query_db('DELETE FROM quiz WHERE id = ?', [quiz_id])
+        query_db('DELETE FROM quiz_question WHERE id_quiz = ?', [quiz_id])
+        query_db('DELETE FROM quiz_choice WHERE id_quiz_question IN (SELECT id FROM quiz_question WHERE id_quiz = ?)', [quiz_id])
+
+        return redirect('/instructor/manage-materials/' + str(id_kursus))
+
     def add_endpoint_quiz(self):
         self.add_endpoint('/instructor/quiz/<int:id_kursus>', 'quiz', self.quiz, ['GET', 'POST'])
         self.add_endpoint('/student/course/<int:course_id>/quiz/<int:quiz_id>', 
                         'take_quiz', 
                         self.take_quiz, 
                         ['GET', 'POST'])
+        self.add_endpoint('/instructor/quiz/delete/<int:id_kursus>/<int:quiz_id>', 'delete_quiz', self.delete_quiz, ['GET'])
+        
