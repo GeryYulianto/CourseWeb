@@ -218,6 +218,26 @@ class StudentFeatures(FlaskApp):
         course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', [course_id], one=True)
         return render_template('student/payment.html', course=course)
 
+    def enroll_course(self, course_id):
+        if not session.get('email') or session.get('role') != 'user':
+            return redirect(url_for('home'))
+
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', [email], one=True)
+        if not student:
+            return redirect(url_for('home'))
+
+        student_id = student['id_peserta']
+
+        query_db(
+            '''
+            INSERT INTO peserta_has_kursus (id_peserta, id_kursus)
+            VALUES (?, ?)
+            ''',
+            [student_id, course_id]
+        )
+
+        return redirect(url_for('student_courses'))
 
     def add_endpoints_student(self):
         self.add_endpoint('/student/', 'student_dashboard', self.student_dashboard, methods=['GET'])
@@ -230,4 +250,5 @@ class StudentFeatures(FlaskApp):
         self.add_endpoint('/student/browse-course', 'browse_course', self.browse_course, methods=['GET'])
         self.add_endpoint('/student/quiz/<int:quiz_id>/retry', 'retry_quiz', self.retry_quiz, methods=['POST'])
         self.add_endpoint('/student/pay/<int:course_id>', 'payment', self.pay_for_course, ['GET', 'POST'])
+        self.add_endpoint('/student/enroll/<int:course_id>', 'enroll_course', self.enroll_course, ['GET', 'POST'])
 
