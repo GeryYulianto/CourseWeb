@@ -116,8 +116,6 @@ class StudentFeatures(FlaskApp):
             questions=questions
         )
 
-
-
     def submit_quiz(self, quiz_id):
         if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
@@ -154,7 +152,6 @@ class StudentFeatures(FlaskApp):
 
         # Redirect back to the quiz page
         return redirect(url_for('take_quizs', quiz_id=quiz_id))
-
 
     def retry_quiz(self, quiz_id):
         if not session.get('email') and session.get('role') != 'user':
