@@ -48,6 +48,7 @@ def init_db():
                 id_kursus INTEGER PRIMARY KEY AUTOINCREMENT,
                 id_instruktur INTEGER,
                 nama_kursus TEXT NOT NULL,
+                harga_kursus INT NOT NULL,
                 FOREIGN KEY (id_instruktur) REFERENCES instruktur(id_instruktur)
             )
         ''')
@@ -76,6 +77,7 @@ def init_db():
                 id_peserta INTEGER,
                 id_kursus INTEGER,
                 total_harga INT NOT NULL,
+                status TEXT NOT NULL,
                 FOREIGN KEY (id_peserta) REFERENCES peserta(id_peserta),
                 FOREIGN KEY (id_kursus) REFERENCES kursus(id_kursus)
             )
@@ -156,27 +158,6 @@ def init_db():
                 score INTEGER NOT NULL,
                 FOREIGN KEY (id_peserta) REFERENCES peserta(id_peserta),
                 FOREIGN KEY (id_quiz) REFERENCES quiz(id)
-            )
-        ''')
-
-        db.execute('''
-            CREATE TABLE IF NOT EXISTS payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                participant_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                date TEXT NOT NULL
-            )
-        ''')
-
-        db.execute('''
-            CREATE TABLE IF NOT EXISTS invoices (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                payment_id INTEGER NOT NULL,
-                participant_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                date TEXT NOT NULL,
-                FOREIGN KEY (payment_id) REFERENCES payments(id)
             )
         ''')
 

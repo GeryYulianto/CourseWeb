@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Courses - Course Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/student">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title mb-4">Browse Courses</h1>
+                <div class="row g-4">
+                    {% for course in courses %}
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h3 class="card-title h5">{{ course.nama_kursus }}</h3>
+                                <p class="card-text">Course ID: {{ course.id_kursus }}</p>
+                                <p class="card-text">Price: ${{ course.price }}</p>
+                                <a href="/student/enroll/{{ course.id_kursus }}" class="btn btn-primary">Enroll</a>
+                                <a href="/student/pay/{{ course.id_kursus }}" class="btn btn-success">Pay Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

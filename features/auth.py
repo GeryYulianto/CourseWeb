@@ -231,9 +231,10 @@ class AuthFeatures(FlaskApp):
         if request.method == 'POST':
             nama_kursus = request.form['nama_kursus']
             id_instruktur = request.form['id_instruktur']
+            harga_kursus = request.form['harga_kursus']
             
-            query_db('INSERT INTO kursus (nama_kursus, id_instruktur) VALUES (?, ?)',
-                     (nama_kursus, id_instruktur))
+            query_db('INSERT INTO kursus (nama_kursus, id_instruktur, harga_kursus) VALUES (?, ?, ?)',
+                     (nama_kursus, id_instruktur, harga_kursus))
             return redirect('/admin/manage-courses')
         else:
             instructors = query_db('SELECT * FROM instruktur')
@@ -246,25 +247,10 @@ class AuthFeatures(FlaskApp):
         if request.method == 'POST':
             nama_kursus = request.form['nama_kursus']
             id_instruktur = request.form['id_instruktur']
+            harga_kursus = request.form['harga_kursus']
             
-            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ? WHERE id_kursus = ?',
-                     (nama_kursus, id_instruktur, id_kursus))
-            return redirect('/admin/manage-courses')
-        
-        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
-        instructors = query_db('SELECT * FROM instruktur')
-        return render_template('edit_course_page.html', course=course, instructors=instructors)
-
-    def update_course(self, id_kursus):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        if request.method == 'POST':
-            nama_kursus = request.form['nama_kursus']
-            id_instruktur = request.form['id_instruktur']
-            
-            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ? WHERE id_kursus = ?',
-                     (nama_kursus, id_instruktur, id_kursus))
+            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ?, harga_kursus = ? WHERE id_kursus = ?',
+                     (nama_kursus, id_instruktur, harga_kursus, id_kursus))
             return redirect('/admin/manage-courses')
         
         course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
@@ -480,7 +466,6 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/manage-courses', 'manage_courses', self.manage_courses, ['GET', 'POST'])
         self.add_endpoint('/admin/add-course', 'add_course', self.add_course, ['GET', 'POST'])
         self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
-        self.add_endpoint('/admin/update-course/<id_kursus>', 'update_course', self.update_course, ['GET', 'POST'])
         self.add_endpoint('/admin/delete-course/<id_kursus>', 'delete_course', self.delete_course, ['GET'])
         self.add_endpoint('/admin/manage-instructors', 'manage_instructors', self.manage_instructors, ['GET'])
         self.add_endpoint('/admin/add-instructor', 'add_instructor', self.add_instructor, ['GET', 'POST'])

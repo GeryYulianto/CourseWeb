@@ -53,6 +53,21 @@ class StudentFeatures(FlaskApp):
         # Handle quiz submission logic here
         pass
 
+    def browse_course(self):
+        if not session.get('email') and session.get('role') != 'student':
+            return redirect(url_for('home'))
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', (email,), one=True)
+        student_id = student['id_peserta']
+
+        courses = query_db('''
+            SELECT * FROM kursus
+            WHERE id_kursus NOT IN (
+                SELECT id_kursus FROM peserta_has_kursus WHERE id_peserta = ?
+            )
+        ''', (student_id,))
+        return render_template('student/browse_course.html', courses=courses)
+
     def add_endpoints_student(self):
         self.add_endpoint('/student/', 'student_dashboard', self.student_dashboard, methods=['GET'])
         self.add_endpoint('/student/courses', 'student_courses', self.student_courses, methods=['GET'])
@@ -61,3 +76,4 @@ class StudentFeatures(FlaskApp):
         self.add_endpoint('/student/course/<int:course_id>', 'student_course_detail', self.student_course_detail, methods=['GET'])
         self.add_endpoint('/student/quiz/<int:quiz_id>', 'take_quizs', self.take_quizs, methods=['GET'])
         self.add_endpoint('/student/quiz/<int:quiz_id>/submit', 'submit_quiz', self.submit_quiz, methods=['POST'])
+        self.add_endpoint('/student/browse-course', 'browse_course', self.browse_course, methods=['GET'])
