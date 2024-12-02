@@ -13,7 +13,8 @@ class AuthFeatures(FlaskApp):
             
             if user and check_password_hash(user['password'], password):
                 session['email'] = email
-                session['role'] = 'student'
+                session['role'] = 'user'
+                session['id_peserta'] = user['id_peserta']
                 return redirect('/')
             else:
                 return render_template('login_page.html', error='Invalid email or password')
@@ -47,9 +48,11 @@ class AuthFeatures(FlaskApp):
             return render_template('register_page.html')
     
     def home(self):
-        if not session.get('email') or session.get('role') != 'student':
-            return redirect(url_for('login'))
-        return redirect(url_for('student_dashboard'))
+        #Kalo belom login
+        if not session.get('email') and session.get('role') != 'user':
+            return redirect('/login')
+        
+        return render_template('student/dashboard.html')
     
     def logout(self):
         session.clear()
@@ -231,99 +234,14 @@ class AuthFeatures(FlaskApp):
         if request.method == 'POST':
             nama_kursus = request.form['nama_kursus']
             id_instruktur = request.form['id_instruktur']
-            harga_kursus = request.form['harga_kursus']
             
-            query_db('INSERT INTO kursus (nama_kursus, id_instruktur, harga_kursus) VALUES (?, ?, ?)',
-                     (nama_kursus, id_instruktur, harga_kursus))
+            query_db('INSERT INTO kursus (nama_kursus, id_instruktur) VALUES (?, ?)',
+                     (nama_kursus, id_instruktur))
             return redirect('/admin/manage-courses')
         else:
             instructors = query_db('SELECT * FROM instruktur')
             return render_template('add_course_page.html', instructors=instructors)
         
-    def edit_course(self, id_kursus):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        if request.method == 'POST':
-            nama_kursus = request.form['nama_kursus']
-            id_instruktur = request.form['id_instruktur']
-            harga_kursus = request.form['harga_kursus']
-            
-            query_db('UPDATE kursus SET nama_kursus = ?, id_instruktur = ?, harga_kursus = ? WHERE id_kursus = ?',
-                     (nama_kursus, id_instruktur, harga_kursus, id_kursus))
-            return redirect('/admin/manage-courses')
-        
-        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
-        instructors = query_db('SELECT * FROM instruktur')
-        return render_template('edit_course_page.html', course=course, instructors=instructors)
-
-    def delete_course(self, id_kursus):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        query_db('DELETE FROM kursus WHERE id_kursus = ?', (id_kursus,))
-        return redirect('/admin/manage-courses')
-
-    def manage_instructors(self):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        instructors = query_db('SELECT * FROM instruktur')
-        return render_template('manage_instructor_page.html', instructors=instructors)
-
-    def add_instructor(self):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        if request.method == 'POST':
-            nama_instruktur = request.form['nama_instruktur']
-            email = request.form['email']
-            password = request.form['password']
-
-            # Check if email already exists
-            existing_user = query_db('SELECT * FROM all_users WHERE email = ?', (email,), one=True)
-            if existing_user:
-                return render_template('add_instructor_page.html', error='Email already registered')
-
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-
-            query_db('INSERT INTO instruktur (nama_instruktur, email, password) VALUES (?, ?, ?)',
-                     (nama_instruktur, email, hashed_password))
-            
-            return redirect('/admin/manage-instructors')
-        else:
-            return render_template('add_instructor_page.html')
-
-    def edit_instructor(self, id_instruktur):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        if request.method == 'POST':
-            nama_instruktur = request.form['nama_instruktur']
-            email = request.form['email']
-            
-            query_db('UPDATE instruktur SET nama_instruktur = ?, email = ? WHERE id_instruktur = ?',
-                     (nama_instruktur, email, id_instruktur))
-            return redirect('/admin/manage-instructors')
-        
-        instructor = query_db('SELECT * FROM instruktur WHERE id_instruktur = ?', (id_instruktur,), one=True)
-        return render_template('edit_instructor_page.html', instructor=instructor)
-
-    def delete_instructor(self, id_instruktur):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        # Check if the instructor is associated with any course
-        result = query_db('SELECT COUNT(*) FROM kursus WHERE id_instruktur = ?', (id_instruktur,))
-        if result[0][0] > 0:
-            flash('Cannot delete instructor. The instructor is associated with one or more courses.', 'danger')
-            return redirect(url_for('manage_instructors'))
-
-        # If not associated, proceed with deletion
-        query_db('DELETE FROM instruktur WHERE id_instruktur = ?', (id_instruktur,))
-        flash('Instructor deleted successfully.', 'success')
-        return redirect(url_for('manage_instructors'))
-
     def manage_materials(self, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
             return redirect('/login_instructor')
@@ -332,13 +250,10 @@ class AuthFeatures(FlaskApp):
         instructor = query_db('SELECT id_instruktur FROM instruktur WHERE email = ?', (email,), one=True)
 
         if instructor:
-            # Fetch materials
             materials = query_db('SELECT * FROM materi WHERE id_kursus = ?', (id_kursus,))
             
-            # Fetch course name
             course_name = query_db('SELECT nama_kursus FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
             
-            # Fetch quizzes with questions
             quizzes = query_db('''
                 SELECT q.id, q.title, 
                     GROUP_CONCAT(qq.question) as questions,
@@ -369,7 +284,6 @@ class AuthFeatures(FlaskApp):
             )
         else:
             return redirect('/login_instructor')
-    
     def add_material(self, id_kursus):
         if not session.get('email') or session.get('role') != 'instructor':
             return redirect('/login_instructor')
@@ -407,39 +321,6 @@ class AuthFeatures(FlaskApp):
         query_db('DELETE FROM materi WHERE id_materi = ?', (id_materi,))
         return redirect(f'/instructor/manage-materials/{id_kursus}')
 
-    def manage_enrollments(self):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        courses = query_db('SELECT * FROM kursus INNER JOIN instruktur ON kursus.id_instruktur = instruktur.id_instruktur')
-        enrollments = query_db('''
-            SELECT p.id_peserta, p.nama_peserta, k.id_kursus, k.nama_kursus
-            FROM peserta_has_kursus pk
-            JOIN peserta p ON pk.id_peserta = p.id_peserta
-            JOIN kursus k ON pk.id_kursus = k.id_kursus
-            ORDER BY k.id_kursus, p.id_peserta
-        ''')
-        return render_template('manage_enrollments_page.html', courses=courses, enrollments=enrollments)
-
-    def enroll_student(self, id_kursus):
-        if not session.get('email') and session.get('role') != 'admin':
-            return redirect('/login_admin')
-        
-        if request.method == 'POST':
-            id_peserta = request.form['id_peserta']
-            student = query_db('SELECT * FROM peserta WHERE id_peserta = ?', (id_peserta,), one=True)
-            if not student:
-                flash('Student not found', 'error')
-                return redirect(f'/admin/enroll-student/{id_kursus}')
-            
-            query_db('INSERT INTO peserta_has_kursus (id_peserta, id_kursus) VALUES (?, ?)',
-                     (id_peserta, id_kursus))
-            flash('Student enrolled successfully', 'success')
-            return redirect(f'/admin/manage-enrollments')
-        
-        students = query_db('SELECT * FROM peserta')
-        course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', (id_kursus,), one=True)
-        return render_template('enroll_student_page.html', students=students, course=course)
-
 
     def add_endpoint_auth(self):
         # USER ENDPOINTS ------------------------------------------------------------------------------
@@ -465,14 +346,7 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/add-user', 'add_user', self.add_user, ['GET', 'POST'])
         self.add_endpoint('/admin/manage-courses', 'manage_courses', self.manage_courses, ['GET', 'POST'])
         self.add_endpoint('/admin/add-course', 'add_course', self.add_course, ['GET', 'POST'])
-        self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
-        self.add_endpoint('/admin/delete-course/<id_kursus>', 'delete_course', self.delete_course, ['GET'])
-        self.add_endpoint('/admin/manage-instructors', 'manage_instructors', self.manage_instructors, ['GET'])
-        self.add_endpoint('/admin/add-instructor', 'add_instructor', self.add_instructor, ['GET', 'POST'])
-        self.add_endpoint('/admin/edit-instructor/<id_instruktur>', 'edit_instructor', self.edit_instructor, ['GET', 'POST'])
-        self.add_endpoint('/admin/delete-instructor/<id_instruktur>', 'delete_instructor', self.delete_instructor, ['GET'])
-        self.add_endpoint('/admin/manage-enrollments', 'manage_enrollments', self.manage_enrollments, ['GET'])
-        self.add_endpoint('/admin/enroll-student/<id_kursus>', 'enroll_student', self.enroll_student, ['GET', 'POST'])
+        # self.add_endpoint('/admin/edit-course/<id_kursus>', 'edit_course', self.edit_course, ['GET', 'POST'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])
