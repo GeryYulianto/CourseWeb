@@ -19,25 +19,36 @@
     </nav>
 
     <div class="container py-5">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="card-title mb-4">Browse Courses</h1>
-                <div class="row g-4">
-                    {% for course in courses %}
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h3 class="card-title h5">{{ course.nama_kursus }}</h3>
-                                <p class="card-text">Course ID: {{ course.id_kursus }}</p>
-                                <p class="card-text">Price: ${{ course.price }}</p>
-                                <a href="/student/enroll/{{ course.id_kursus }}" class="btn btn-primary">Enroll</a>
-                                <a href="/student/pay/{{ course.id_kursus }}" class="btn btn-success">Pay Now</a>
-                            </div>
+        <h1 class="mb-4">Browse Courses</h1>
+        <form method="GET" action="/student/browse-course" class="mb-4">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" placeholder="Search for courses"
+                    aria-label="Search for courses" aria-describedby="button-search">
+                <button class="btn btn-primary" type="submit" id="button-search">Search</button>
+            </div>
+        </form>
+        <div class="row g-4">
+            {% if courses %}
+            {% for course in courses %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <h4 class="card-title h4">{{ course.nama_kursus }}</h4>
+                        <p class="card-text">Course ID: {{ course.id_kursus }}</p>
+                        <p class="card-text">Price: Rp {{ course.harga_kursus }}</p>
+                        <div class="mt-auto">
+                            <form method="POST" action="/student/enroll/{{ course.id_kursus }}">
+                                <button type="submit" class="btn btn-primary w-100 mb-2">Enroll</button>
+                            </form>
+                            <!-- <a href="/student/pay/{{ course.id_kursus }}" class="btn btn-success w-100">Pay Now</a> -->
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-muted">No more available courses.</p>
+            {% endif %}
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

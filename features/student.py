@@ -5,12 +5,12 @@ from database import query_db
 
 class StudentFeatures(FlaskApp):
     def student_dashboard(self):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
         return render_template('student/dashboard.html')
 
     def student_courses(self):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
         
         email = session.get('email')
@@ -20,13 +20,13 @@ class StudentFeatures(FlaskApp):
         return render_template('student/courses.html', courses=enrolled_courses)
 
     def student_progress(self):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
         progress_data = query_db('SELECT * FROM StudentProgress WHERE id_peserta = ?', [session.get('id_peserta')])
         return render_template('student/progress.html', progress=progress_data)
 
     def student_achievements(self):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
         achievements = query_db('SELECT * FROM Achievement WHERE id_peserta = ?', [session.get('id_peserta')])
         return render_template('student/achievements.html', achievements=achievements)
@@ -76,7 +76,7 @@ class StudentFeatures(FlaskApp):
 
 
     def take_quizs(self, quiz_id):
-        if not session.get('email') or session.get('role') != 'user':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
 
         # Fetch the quiz details
@@ -119,7 +119,7 @@ class StudentFeatures(FlaskApp):
 
 
     def submit_quiz(self, quiz_id):
-        if not session.get('email') or session.get('role') != 'user':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
 
         # Fetch all questions for the quiz
@@ -157,7 +157,7 @@ class StudentFeatures(FlaskApp):
 
 
     def retry_quiz(self, quiz_id):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') and session.get('role') != 'user':
             return redirect(url_for('home'))
         # Delete the user's quiz submission
         query_db('DELETE FROM user_has_quiz WHERE id_peserta = ? AND id_quiz = ?', [session.get('id_peserta'), quiz_id])
@@ -165,18 +165,30 @@ class StudentFeatures(FlaskApp):
 
 
     def browse_course(self):
-        if not session.get('email') and session.get('role') != 'student':
+        if not session.get('email') or session.get('role') != 'user':
             return redirect(url_for('home'))
+        
         email = session.get('email')
         student = query_db('SELECT * FROM peserta WHERE email = ?', (email,), one=True)
         student_id = student['id_peserta']
+        
+        search_query = request.args.get('search', '')
 
-        courses = query_db('''
-            SELECT * FROM kursus
-            WHERE id_kursus NOT IN (
-                SELECT id_kursus FROM peserta_has_kursus WHERE id_peserta = ?
-            )
-        ''', (student_id,))
+        if search_query:
+            courses = query_db('''
+                SELECT * FROM kursus
+                WHERE id_kursus NOT IN (
+                    SELECT id_kursus FROM peserta_has_kursus WHERE id_peserta = ?
+                ) AND nama_kursus LIKE ?
+            ''', (student_id, f'%{search_query}%'))
+        else:
+            courses = query_db('''
+                SELECT * FROM kursus
+                WHERE id_kursus NOT IN (
+                    SELECT id_kursus FROM peserta_has_kursus WHERE id_peserta = ?
+                )
+            ''', (student_id,))
+        
         return render_template('student/browse_course.html', courses=courses)
     
     def pay_for_course(self, course_id):
