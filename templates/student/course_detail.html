@@ -83,15 +83,19 @@
             </div>
             <div class="card-body">
                 {% if payment and payment.status == 'paid' %}
-                    {% if certificate %}
-                        <p>Congratulations! You have unlocked the certificate for this course.</p>
-                        <p><strong>Certificate Description:</strong> {{ certificate.keterangan }}</p>
-                    {% else %}
-                        <p>Your payment is successful, but the certificate has not been issued yet. Please contact support.</p>
-                    {% endif %}
+                {% if certificate %}
+                <p>Congratulations! You have unlocked the certificate for this course.</p>
+                <p><strong>Certificate Description:</strong> {{ certificate.keterangan }}</p>
+                <a href="/certificate/{{ payment.id_kursus }}/{{ payment.id_peserta }}" class="btn btn-warning">Show
+                    Certificate</a>
                 {% else %}
-                    <p>This certificate is locked. Complete the payment to unlock it.</p>
-                    <a href="{{ url_for('payment', course_id=course.id_kursus) }}" class="btn btn-success">Pay Now</a>
+                <p>Your payment is successful, but the certificate has not been issued yet.</p>
+                <a href="/request-certificate/{{ payment.id_kursus }}/{{ payment.id_peserta }}"
+                    class="btn btn-warning">Request Certificate</a>
+                {% endif %}
+                {% else %}
+                <p>This certificate is locked. Complete the payment to unlock it.</p>
+                <a href="{{ url_for('payment', course_id=course.id_kursus) }}" class="btn btn-success">Pay Now</a>
                 {% endif %}
             </div>
         </div>
