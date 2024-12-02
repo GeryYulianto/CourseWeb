@@ -345,6 +345,25 @@ class AuthFeatures(FlaskApp):
         
         instructors = query_db('SELECT * FROM instruktur')
         return render_template('manage_instructor_page.html', instructors=instructors)
+    
+    def manage_payment(self):
+        if not session.get('email') or session.get('role') != 'admin':
+            return redirect('/login_admin')
+
+        # Query payment information with participant and course details
+        payments = query_db('''
+            SELECT 
+                p.id_pembayaran, 
+                pes.id_peserta, 
+                pes.nama_peserta AS peserta_name, 
+                k.nama_kursus, 
+                p.status
+            FROM pembayaran p
+            JOIN peserta pes ON p.id_peserta = pes.id_peserta
+            JOIN kursus k ON p.id_kursus = k.id_kursus
+        ''')
+        return render_template('manage_payment_page.html', payments=payments)
+
 
     def add_instructor(self):
         if not session.get('email') and session.get('role') != 'admin':
@@ -443,6 +462,7 @@ class AuthFeatures(FlaskApp):
         self.add_endpoint('/admin/edit-instructor/<id_instruktur>', 'edit_instructor', self.edit_instructor, ['GET', 'POST'])
         self.add_endpoint('/admin/manage-enrollments', 'manage_enrollments', self.manage_enrollments, ['GET'])
         self.add_endpoint('/admin/enroll-student/<id_kursus>', 'enroll_student', self.enroll_student, ['GET', 'POST'])
+        self.add_endpoint('/admin/manage-payment', 'manage_payment', self.manage_payment, ['GET'])
 
         # MATERIALS ENDPOINTS ------------------------------------------------------------------------------
         self.add_endpoint('/instructor/manage-materials/<id_kursus>', 'manage_materials', self.manage_materials, ['GET'])

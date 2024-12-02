@@ -54,6 +54,73 @@ class QuizFeatures(FlaskApp):
             return redirect(f'/instructor/manage-materials/{id_kursus}')
         else:
             return render_template('quiz_form.html', id_kursus=id_kursus)
+        
+    def update_quiz(self, quiz_id):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect('/login_instructor')
+
+        if request.method == 'POST':
+            # Update quiz title
+            title = request.form['title']
+            query_db('UPDATE quiz SET title = ? WHERE id = ?', (title, quiz_id))
+
+            # Clear existing questions and choices
+            query_db('DELETE FROM quiz_choice WHERE id_quiz_question IN (SELECT id FROM quiz_question WHERE id_quiz = ?)', (quiz_id,))
+            query_db('DELETE FROM quiz_question WHERE id_quiz = ?', (quiz_id,))
+
+            # Extract questions and correct answers
+            questions = request.form.getlist('questions[]')
+            correct_answers = request.form.getlist('correct_answer[]')
+
+            for i, question in enumerate(questions):
+                # Insert question
+                query_db('INSERT INTO quiz_question (id_quiz, question) VALUES (?, ?)', (quiz_id, question))
+                question_id = query_db('SELECT last_insert_rowid()', one=True)[0]
+
+                # Extract choices for the current question
+                question_choices = request.form.getlist(f'choices[{i}][]')
+                print(question_choices)
+
+                for j, choice in enumerate(question_choices):
+                    # Determine if the choice is correct
+                    is_correct = 1 if str(j) == correct_answers[i] else 0
+                    query_db('INSERT INTO quiz_choice (id_quiz_question, choice, is_answer) VALUES (?, ?, ?)',
+                            (question_id, choice, is_correct))
+
+            flash('Quiz updated successfully!', 'success')
+            return redirect('/instructor')
+
+
+        else:
+            # Fetch quiz details
+            quiz = dict(query_db('SELECT * FROM quiz WHERE id = ?', (quiz_id,), one=True))
+            questions = query_db('''
+                SELECT q.id AS question_id, q.question, c.id AS choice_id, c.choice, c.is_answer
+                FROM quiz_question q
+                JOIN quiz_choice c ON q.id = c.id_quiz_question
+                WHERE q.id_quiz = ?
+            ''', (quiz_id,))
+
+            # Organize questions and choices
+            organized_questions = {}
+            for row in questions:
+                question_id = row['question_id']
+                if question_id not in organized_questions:
+                    organized_questions[question_id] = {
+                        'question': row['question'],
+                        'choices': []
+                    }
+                organized_questions[question_id]['choices'].append({
+                    'choice': row['choice'],
+                    'is_answer': row['is_answer']
+                })
+
+            # Add organized questions to quiz
+            quiz['questions'] = list(organized_questions.values())
+            print(quiz)
+            return render_template('student/edit_quiz_form.html', quiz=quiz)
+
+
 
     def delete_quiz(self, id_kursus, quiz_id):
         if not session.get('email') or session.get('role') != 'instructor':
@@ -93,4 +160,5 @@ class QuizFeatures(FlaskApp):
         self.add_endpoint('/instructor/quiz/<int:id_kursus>', 'quiz', self.quiz, ['GET', 'POST'])
         self.add_endpoint('/instructor/quiz/delete/<int:id_kursus>/<int:quiz_id>', 'delete_quiz', self.delete_quiz, ['GET'])
         self.add_endpoint('/instructor/view-quiz-responses/<int:quiz_id>', 'view_response', self.view_quiz_responses, ['GET'])
+        self.add_endpoint('/instructor/update-quiz/<int:quiz_id>', 'update-quiz', self.update_quiz, ['GET', 'POST'])
         
