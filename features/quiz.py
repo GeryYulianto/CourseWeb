@@ -23,8 +23,7 @@ class QuizFeatures(FlaskApp):
                 return redirect(f'/instructor/manage-materials/{id_kursus}')
             
             questions = request.form.getlist('questions[]')
-            correct_answers = request.form.getlist('correct_answer[0]')
-            print(correct_answers)
+            correct_answers = request.form.getlist('correct_answer[]')
             
             # Masukkan choice ke dictionary
             choices = {}
@@ -46,6 +45,7 @@ class QuizFeatures(FlaskApp):
                 
                 question_choices = choices[i]
                 for j, choice in enumerate(question_choices):
+                    print(question_choices, j, choice, correct_answers)
                     # Mark the correct answer
                     is_correct = 1 if j == int(correct_answers[i]) else 0
                     query_db('INSERT INTO quiz_choice (id_quiz_question, choice, is_answer) VALUES (?, ?, ?)',
@@ -65,7 +65,32 @@ class QuizFeatures(FlaskApp):
 
         return redirect('/instructor/manage-materials/' + str(id_kursus))
 
+    def view_quiz_responses(self,quiz_id):
+        if not session.get('email') or session.get('role') != 'instructor':
+            return redirect(url_for('home'))
+
+        # Fetch quiz details
+        quiz = query_db('SELECT * FROM quiz WHERE id = ?', [quiz_id], one=True)
+        if not quiz:
+            return redirect(url_for('instructor_dashboard'))
+
+        # Fetch quiz responses
+        responses = query_db('''
+            SELECT u.nama_peserta as student_name, u.email, uhq.score
+            FROM user_has_quiz uhq
+            JOIN peserta u ON uhq.id_peserta = u.id_peserta
+            WHERE uhq.id_quiz = ?
+        ''', [quiz_id])
+
+        return render_template(
+            'view_quiz_responses.html',
+            quiz=quiz,
+            responses=responses
+        )
+
+
     def add_endpoint_quiz(self):
         self.add_endpoint('/instructor/quiz/<int:id_kursus>', 'quiz', self.quiz, ['GET', 'POST'])
         self.add_endpoint('/instructor/quiz/delete/<int:id_kursus>/<int:quiz_id>', 'delete_quiz', self.delete_quiz, ['GET'])
+        self.add_endpoint('/instructor/view-quiz-responses/<int:quiz_id>', 'view_response', self.view_quiz_responses, ['GET'])
         
