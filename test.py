@@ -64,9 +64,33 @@ def test_endpoint_get():
         assert response.status_code == 200
         print(f'Test Passed for endpoint: {endpoint}')
 
+def test_endpoint_quiz():
+    options = webdriver.EdgeOptions()
+    options.use_chromium = True
+    driver = webdriver.Edge(options=options)
+    driver.get('http://127.0.0.1:8000/login')
+    sleep(1)
+    driver.find_element(By.ID, 'email-user').send_keys('3@gmail.com')
+    driver.find_element(By.ID, 'pass-user').send_keys('3')
+    driver.find_element(By.ID, 'submit-login').click()
+    sleep(3)
+    driver.get('http://127.0.0.1:8000/student/course/1')
+    sleep(2)
+    driver.find_element(By.XPATH, "//a[contains(@href, '/student/quiz/8')]").click()
+    sleep(2)
+    driver.find_element(By.ID, 'choice_57').click()  
+    driver.find_element(By.ID, 'choice_61').click()
+    sleep(2)
+
+    driver.find_element(By.XPATH, "//button[contains(text(), 'Submit Quiz')]").click()
+    sleep(3)
+    print('Test Passed! Quiz Submitted Successfully.')
+
+    driver.quit()
+    
+
         
 
 if __name__ == "__main__":
-    # app_instance = FlaskApp(flask_app)
-    # app_instance.run()
     test_endpoint_get()
+    test_endpoint_quiz()
