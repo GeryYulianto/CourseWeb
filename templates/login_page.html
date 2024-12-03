@@ -20,12 +20,12 @@
                 {% endif %}
                 <form method="POST" action="/login">
                     <div class="mb-3">
-                        <input type="email" class="form-control" name="email" placeholder="Email" required>
+                        <input id="email-user" type="email" class="form-control" name="email" placeholder="Email" required>
                     </div>
                     <div class="mb-3">
-                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                        <input id="pass-user" type="password" class="form-control" name="password" placeholder="Password" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                    <button id="submit-login" type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
                 <br>
                 <a href="/register" class="btn btn-outline-secondary w-100">Register</a>
