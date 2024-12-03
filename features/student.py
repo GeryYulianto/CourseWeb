@@ -1,4 +1,5 @@
 # FILE: student.py
+from datetime import datetime as dt
 from flask import *
 from features.flask_app import FlaskApp
 from database import query_db
@@ -210,6 +211,17 @@ class StudentFeatures(FlaskApp):
                 [student_id, course_id, int(price['harga_kursus']), 'paid']
             )
 
+            id_pembayaran = query_db('SELECT id_pembayaran FROM pembayaran WHERE id_peserta = ? AND id_kursus = ? AND status = "paid"', [student_id, course_id], one=True)
+            if id_pembayaran:
+                datetime = dt.now().strftime('%A, %d %B %Y %H:%M:%S')
+                query_db(
+                    '''
+                    INSERT INTO invoice (id_pembayaran, id_peserta, detail_invoice)
+                    VALUES (?, ?, ?)
+                    ''',
+                    [id_pembayaran['id_pembayaran'], student_id, datetime]
+                )
+
             return redirect(url_for('student_course_detail', course_id=course_id))
 
         course = query_db('SELECT * FROM kursus WHERE id_kursus = ?', [course_id], one=True)
@@ -236,6 +248,58 @@ class StudentFeatures(FlaskApp):
 
         return redirect(url_for('student_courses'))
 
+    def invoices(self):
+        if not session.get('email') or session.get('role') != 'user':
+            return redirect(url_for('home'))
+
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', [email], one=True)
+        if not student:
+            return redirect(url_for('home'))
+
+        student_id = student['id_peserta']
+
+        invoices = query_db(
+            '''
+                SELECT invoice.*, pembayaran.*, kursus.*
+                FROM invoice
+                INNER JOIN pembayaran ON invoice.id_pembayaran = pembayaran.id_pembayaran
+                INNER JOIN kursus ON pembayaran.id_kursus = kursus.id_kursus
+                WHERE invoice.id_peserta = ?
+            ''',
+            [student_id]
+        )
+
+
+        return render_template('student/invoice.html', invoices=invoices)
+
+    def invoice_detail(self, invoice_id):
+        if not session.get('email') or session.get('role') != 'user':
+            return redirect(url_for('home'))
+
+        email = session.get('email')
+        student = query_db('SELECT * FROM peserta WHERE email = ?', [email], one=True)
+        if not student:
+            return redirect(url_for('home'))
+
+        student_id = student['id_peserta']
+
+        invoice = query_db(
+            '''
+                SELECT invoice.*, pembayaran.*, kursus.*
+                FROM invoice
+                INNER JOIN pembayaran ON invoice.id_pembayaran = pembayaran.id_pembayaran
+                INNER JOIN kursus ON pembayaran.id_kursus = kursus.id_kursus
+                WHERE invoice.id_peserta = ? AND invoice.id_invoice = ?
+            ''',
+            [student_id, invoice_id],
+            one=True
+        )
+
+        peserta = query_db('SELECT * FROM peserta WHERE id_peserta = ?', [student_id], one=True)
+
+        return render_template('student/invoice_detail.html', invoice=invoice, peserta=peserta)
+
     def add_endpoints_student(self):
         self.add_endpoint('/student/', 'student_dashboard', self.student_dashboard, methods=['GET'])
         self.add_endpoint('/student/courses', 'student_courses', self.student_courses, methods=['GET'])
@@ -248,4 +312,6 @@ class StudentFeatures(FlaskApp):
         self.add_endpoint('/student/quiz/<int:quiz_id>/retry', 'retry_quiz', self.retry_quiz, methods=['POST'])
         self.add_endpoint('/student/pay/<int:course_id>', 'payment', self.pay_for_course, ['GET', 'POST'])
         self.add_endpoint('/student/enroll/<int:course_id>', 'enroll_course', self.enroll_course, ['GET', 'POST'])
+        self.add_endpoint('/student/invoices', 'invoice', self.invoices, ['GET'])
+        self.add_endpoint('/student/invoice/<int:invoice_id>', 'invoice_detail', self.invoice_detail, ['GET'])
 

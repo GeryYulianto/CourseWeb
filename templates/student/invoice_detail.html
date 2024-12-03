@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Detail - Course Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .invoice-container {
+            border: 2px solid #000;
+            padding: 30px;
+            margin: 50px auto;
+            max-width: 800px;
+            text-align: left;
+        }
+
+        .invoice-title {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 0px;
+            text-align: center;
+        }
+
+        .invoice-id {
+            font-size: 1.2em;
+            color: gray;
+            text-align: center;
+            margin-top: 0px;
+            margin-bottom: 2rem;
+        }
+
+        .invoice-details {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .invoice-sign {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 5rem;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">Course Platform</a>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="invoice-container">
+            <div class="invoice-title">
+                Invoice
+            </div>
+            <div class="invoice-id">
+                Invoice ID: {{ invoice.id_invoice }}
+            </div>
+            <div class="invoice-details">
+                <p><strong>From:</strong> Course Platform</p>
+                <p><strong>Billing To:</strong> {{ peserta.nama_peserta }}</p>
+                <p><strong>Address:</strong> {{ peserta.alamat }}</p>
+                <br>
+                <p><strong>Course Name:</strong> {{ invoice.nama_kursus }}</p>
+                <p><strong>Total Price:</strong> {{ invoice.total_harga }}</p>
+                <p><strong>Invoice Date:</strong> {{ invoice.detail_invoice }}</p>
+            </div>
+            <div class="invoice-sign">
+                <p>Course Platform</p>
+            </div>
+            <!-- <a href="/student/invoices" class="btn btn-primary">Back to Invoices</a> -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
